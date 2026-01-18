@@ -6,3 +6,5 @@ scikit-learn
 joblib
 huggingface-hub
 gunicorn
+tensorflow==2.16.1
+pillow
