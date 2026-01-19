@@ -1,20 +1,26 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
 import numpy as np
 from PIL import Image
-import os
-from tflite_runtime.interpreter import Interpreter
+import tensorflow as tf
+import io
+from huggingface_hub import hf_hub_download
 
-app = Flask(__name__)
-CORS(app)
+app = FastAPI(title="Crop Disease Detection API")
 
-TFLITE_MODEL_PATH = "crop_disease_detection.tflite"
 
-interpreter = Interpreter(model_path=TFLITE_MODEL_PATH)
-interpreter.allocate_tensors()
+HF_REPO_ID = "abhigorde15/crop-disease-detection"
+HF_MODEL_FILE = "crop_disease_detection.keras"
 
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+print("Downloading model from Hugging Face Hub...")
+MODEL_PATH = hf_hub_download(
+    repo_id=HF_REPO_ID,
+    filename=HF_MODEL_FILE
+)
+
+print("Loading Keras model...")
+model = tf.keras.models.load_model(MODEL_PATH)
+print("Model loaded successfully!")
 
 IMG_SIZE = (160, 160)
 
@@ -43,26 +49,35 @@ CLASS_NAMES = [
     'Tomato___healthy'
 ]
 
-@app.route("/api/health")
-def health():
-    return jsonify({"status": "OK"}), 200
 
-@app.route("/api/predict", methods=["POST"])
-def predict():
-    image = Image.open(request.files["image"]).convert("RGB")
-    image = image.resize(IMG_SIZE)
+@app.get("/")
+def home():
+    return {"status": "Crop Disease Detection API is running"}
 
-    img = np.array(image, dtype=np.float32)
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
+@app.post("/predict")
+async def predict(image: UploadFile = File(...)):
+    try:
+        img_bytes = await image.read()
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        img = img.resize(IMG_SIZE)
 
-    interpreter.set_tensor(input_details[0]["index"], img)
-    interpreter.invoke()
+        img_array = np.array(img, dtype=np.float32)
+        img_array = np.expand_dims(img_array, axis=0)
 
-    preds = interpreter.get_tensor(output_details[0]["index"])[0]
-    idx = int(np.argmax(preds))
+        # EfficientNet preprocessing
+        img_array = tf.keras.applications.efficientnet.preprocess_input(img_array)
 
-    return jsonify({
-        "predicted_class": CLASS_NAMES[idx],
-        "confidence": round(float(preds[idx] * 100), 2)
-    })
+        predictions = model.predict(img_array)
+        idx = int(np.argmax(predictions[0]))
+        confidence = float(np.max(predictions[0]) * 100)
+
+        return {
+            "predicted_class": CLASS_NAMES[idx],
+            "confidence": round(confidence, 2)
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )

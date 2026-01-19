@@ -1,6 +1,7 @@
-Flask
-flask-cors
-gunicorn
+fastapi
+uvicorn
+tensorflow
 numpy
 pillow
-tflite-runtime
+huggingface_hub
+python-multipart
