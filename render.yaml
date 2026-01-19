@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: crop-disease-api
+    env: python
+    pythonVersion: 3.10.13
+
+    buildCommand: |
+      pip install -r model/crop-disease-model/requirements.txt
+
+    startCommand: |
+      gunicorn model.crop-disease-model.app:app
