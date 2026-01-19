@@ -3,31 +3,18 @@ from flask_cors import CORS
 import numpy as np
 from PIL import Image
 import os
-import platform
-import tensorflow as tf
+from tflite_runtime.interpreter import Interpreter
+
 app = Flask(__name__)
 CORS(app)
 
 TFLITE_MODEL_PATH = "crop_disease_detection.tflite"
 
-if not os.path.exists(TFLITE_MODEL_PATH):
-    raise FileNotFoundError("TFLite model not found!")
-
-# 🔁 AUTO SWITCH
-if platform.system() == "Windows":
-    print("Running on Windows → using TensorFlow")
-   
-    interpreter = tf.lite.Interpreter(model_path=TFLITE_MODEL_PATH)
-else:
-    print("Running on Linux → using tflite-runtime")
-    from tflite_runtime.interpreter import Interpreter
-    interpreter = Interpreter(model_path=TFLITE_MODEL_PATH)
-
-print("Loading TFLite model...")
+interpreter = Interpreter(model_path=TFLITE_MODEL_PATH)
 interpreter.allocate_tensors()
+
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
-print("TFLite model loaded successfully!")
 
 IMG_SIZE = (160, 160)
 
@@ -62,29 +49,20 @@ def health():
 
 @app.route("/api/predict", methods=["POST"])
 def predict():
-    if "image" not in request.files:
-        return jsonify({"error": "Image file is required"}), 400
-
     image = Image.open(request.files["image"]).convert("RGB")
     image = image.resize(IMG_SIZE)
 
     img = np.array(image, dtype=np.float32)
+    img = img / 255.0
     img = np.expand_dims(img, axis=0)
-    img = tf.keras.applications.efficientnet.preprocess_input(img)
-
 
     interpreter.set_tensor(input_details[0]["index"], img)
     interpreter.invoke()
 
-    preds = interpreter.get_tensor(output_details[0]["index"])
-    idx = int(np.argmax(preds[0]))
-    confidence = float(np.max(preds[0]) * 100)
+    preds = interpreter.get_tensor(output_details[0]["index"])[0]
+    idx = int(np.argmax(preds))
 
     return jsonify({
         "predicted_class": CLASS_NAMES[idx],
-        "confidence": round(confidence, 2)
+        "confidence": round(float(preds[idx] * 100), 2)
     })
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)

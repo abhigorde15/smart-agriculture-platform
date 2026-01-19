@@ -1,9 +1,6 @@
-
 Flask
 flask-cors
 gunicorn
-tensorflow
 numpy
 pillow
-pandas
-huggingface_hub
+tflite-runtime
