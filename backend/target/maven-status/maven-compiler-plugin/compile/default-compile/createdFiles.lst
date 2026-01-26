@@ -42,3 +42,4 @@ com\smartagri\dto\CropDto.class
 com\smartagri\dto\FarmerProfileDto.class
 com\smartagri\repository\DiseaseDetectionRepository.class
 com\smartagri\repository\FarmerProfileRepository.class
+com\smartagri\dto\HFDiseaseResponse.class
