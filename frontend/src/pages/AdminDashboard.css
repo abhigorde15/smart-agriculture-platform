@@ -1,0 +1,30 @@
+              @media (max-width: 768px) {
+                    .admin-stats-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+
+                    .admin-content-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+
+                    table {
+                        font-size: 0.875rem;
+                    }
+
+                    table th,
+                    table td {
+                        padding: 0.5rem !important;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    table {
+                        font-size: 0.75rem;
+                    }
+
+                    table th,
+                    table td {
+                        padding: 0.375rem !important;
+                    }
+                }
+          
