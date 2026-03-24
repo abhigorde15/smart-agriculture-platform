@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plant } from '@phosphor-icons/react';
-
+const [loading, setLoading] = useState(false);
 const Register = () => {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -20,16 +20,20 @@ const Register = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-           
-            const response = await authService.register(formData);
-            login(response.data);
-            navigate('/dashboard');
-        } catch (err) {
-            setError('Registration failed. Email might be in use.');
-        }
-    };
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+        const response = await authService.register(formData);
+        login(response.data);
+        navigate('/dashboard');
+    } catch (err) {
+        setError('Registration failed. Email might be in use.');
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="flex items-center justify-center min-h-screen" style={{ background: 'linear-gradient(135deg, var(--color-secondary) 0%, var(--color-bg) 100%)' }}>
@@ -77,9 +81,14 @@ const Register = () => {
                         />
                     </div>
                    
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                        Register
-                    </button>
+                    <button 
+    type="submit" 
+    className="btn btn-primary" 
+    style={{ width: '100%' }} 
+    disabled={loading}
+>
+    {loading ? 'Registering...' : 'Register'}
+</button>
                 </form>
                 <div className="text-center mt-4">
                     <p>Already have an account? <Link to="/login" style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>Login</Link></p>
