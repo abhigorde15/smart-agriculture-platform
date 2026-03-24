@@ -1,9 +1,12 @@
-import { useState } from 'react';
+
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plant } from '@phosphor-icons/react';
-const [loading, setLoading] = useState(false);
+import { useState } from 'react';
+
+
+
 const Register = () => {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -34,7 +37,7 @@ const Register = () => {
         setLoading(false);
     }
 };
-
+ const [loading, setLoading] = useState(false);
     return (
         <div className="flex items-center justify-center min-h-screen" style={{ background: 'linear-gradient(135deg, var(--color-secondary) 0%, var(--color-bg) 100%)' }}>
             <div className="card register-card" style={{ width: '400px', maxWidth: '100%' }}>
